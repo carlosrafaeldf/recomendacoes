@@ -18,7 +18,7 @@ entrypoint: gunicorn -b :$PORT app:app
 
 runtime_config:
   operating_system: ubuntu22
-  runtime_version: "3.10.10-buster"
+  runtime_version: "3.12"
 
 # This sample incurs costs to run on the App Engine flexible environment.
 # The settings below are to reduce costs during testing and are not appropriate
