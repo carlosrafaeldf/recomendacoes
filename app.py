@@ -17,6 +17,7 @@ df_interesses = pd.read_csv('interesse.csv')
 df_detalhes_materias = pd.read_csv('df_detalhes_materias.csv')
 df_autorias = pd.read_csv('df_autorias.csv')
 
+df_detalhes_materias["combinacao_clean"] = df_detalhes_materias["combinacao_clean"].astype(str)
 corpus_parla = df_detalhes_materias["combinacao_clean"]
 corpus_parla = [doc.translate(str.maketrans('', '', string.punctuation)).replace('\n',' ').lower() for doc in corpus_parla]
 tokenized_corpus_parla = [doc.split(" ") for doc in corpus_parla]
