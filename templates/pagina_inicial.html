@@ -11,7 +11,7 @@
         <h1 class="title">Lista de Senadores</h1>
          <ul class="list-group">
             {% for senador in senadores %}
-                <li class="list-group-item">{{ senador['NomeParlamentar'] }}</li>
+                <li class="list-group-item"><a href="{{ url_for('pagina_detalhes', id=senador['CodigoParlamentar']) }}">{{ senador['NomeParlamentar'] }}</a></li>
             {% endfor %}
         </ul>
     </div>

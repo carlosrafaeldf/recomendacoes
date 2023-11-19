@@ -262,12 +262,53 @@ def obter_similares_pesquisa(codigo_parlamentar, query):
     df_retorno = df_retorno.replace(np.nan, '')
     df_retorno = df_retorno.to_dict(orient='records')
     return jsonify({'resultados': df_retorno})
-    
 
 @app.route('/')
 def pagina_inicial():
     senadores = obter_dataframe_senadores().to_dict(orient='records')
     return render_template('pagina_inicial.html', senadores=senadores)
+
+@app.route('/senador/<int:id>')
+def pagina_detalhes(id):
+    senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]    
+    #sugestoes_para_senador = obter_dataframe_sugestoes()[(obter_dataframe_sugestoes()['CodigoParlamentar'] == id)].head(12).to_dict(orient='records')
+    df_retorno = obter_dataframe_sugestoes()[(obter_dataframe_sugestoes()['CodigoParlamentar'] == id)]
+    df_retorno = df_retorno.replace({np.nan: None})
+    df_retorno = df_retorno.head(12).to_dict(orient='records')
+    ##sugestoes_para_senador = obter_dataframe_sugestoes()[(obter_dataframe_sugestoes()['CodigoParlamentar'] == id) & (obter_dataframe_sugestoes()['prioridade'] == 'Não')].head(12).to_dict(orient='records')
+    #sugestoes_prioritarias = obter_dataframe_sugestoes()[(obter_dataframe_sugestoes()['CodigoParlamentar'] == id) & (obter_dataframe_sugestoes()['prioridade'] == 'Sim')].head(12).to_dict(orient='records')
+    return render_template('pagina_detalhes.html', senador=senador, sugestoes=df_retorno)
+
+@app.route('/senador/<int:id>/interesses')
+def pagina_interesses(id):
+    interesses_para_senador = obter_dataframe_interesses(id).to_dict(orient='records')
+    senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]
+    return render_template('pagina_interesses.html',senador_selecionado=senador, interesses=interesses_para_senador,similares_sugeridas=obter_similares_sugeridas_coseno)
+
+@app.route('/senador/<int:id>/detalhes_materias/<int:codigo_materia>')
+def pagina_detalhes_materias(id, codigo_materia):
+    interesse_para_senador = obter_dataframe_interesses(id)[obter_dataframe_interesses(id)['CodigoMateria'] == codigo_materia]
+    
+    if not interesse_para_senador.empty:
+        interesse_para_senador = interesse_para_senador.to_dict(orient='records')[0]
+    else:
+        interesse_para_senador = None
+    
+    senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]
+    detalhe_materia = obter_dataframe_detalhe_materia()[obter_dataframe_detalhe_materia()['CodigoMateria'] == codigo_materia].to_dict(orient='records')[0]
+    return render_template('pagina_detalhes_materias.html',senador_selecionado=senador, materia=detalhe_materia,similares_sugeridas=obter_similares_sugeridas,interesse=interesse_para_senador )
+
+@app.route('/senador/<int:id>/pesquisar/<string:query>', methods=['GET'])
+def pesquisar_similares(id, query):
+    # Lógica para recuperar os dados do banco de dados ou de onde quer que estejam armazenados
+    # Substitua isso pela lógica real de pesquisa em seu aplicativo
+
+    # Aqui, estou apenas retornando um exemplo de JSON para fins de teste
+    #resultados = obter_similares_pesquisa(id,query)
+    resultados = obter_similares_pesquisa(id,query)
+
+    # Retorna a resposta como JSON
+    return resultados
 
 if __name__ == '__main__':
     app.run(debug=True)
