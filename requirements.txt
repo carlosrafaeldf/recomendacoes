@@ -9,4 +9,3 @@ rank-bm25
 requests
 scikit-learn
 spacy
-https://github.com/explosion/spacy-models/releases/tag/pt_core_news_lg-3.7.0
