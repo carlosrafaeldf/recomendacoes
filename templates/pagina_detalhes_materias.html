@@ -25,6 +25,19 @@
             <ul class="list-group">
                 <li class="list-group-item">
                     <h3 class="text-primary">{{ materia['Identificacao'] }}
+                        <button class="btn btn-success thumbs-up"                                
+
+                        data-codigo-parlamentar="{{ senador['CodigoParlamentar'] }}" 
+                                data-codigo-materia="{{ materia['CodigoMateria'] }}" 
+                                data-identificador-unico="{{ materia['identificador_unico'] }}">
+                            <img src="{{ url_for('static', filename='hand-thumbs-up.svg') }}" class="thumbs">
+                        </button>
+                        <button class="btn btn-danger thumbs-down"
+                                data-codigo-parlamentar="{{ senador['CodigoParlamentar'] }}" 
+                                data-codigo-materia="{{ materia['CodigoMateria'] }}" 
+                                data-identificador-unico="{{ materia['identificador_unico'] }}">
+                            <img src="{{ url_for('static', filename='hand-thumbs-down.svg') }}" class="thumbs">
+                        </button>    
                     
             <a href="https://www25.senado.leg.br/web/atividade/materias/-/materia/{{ materia['CodigoMateria'] }}" target="_blank" class="btn btn-primary">Saiba Mais</a>
         

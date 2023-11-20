@@ -41,7 +41,10 @@
         }
 
         </style>
-        <script src="{{ url_for('static', filename='script.js') }}"></script>
+        <script>
+            // eslint-disable-next-line
+            var senador = {{ senador | tojson | safe }};            
+         </script>        
     </head>
 <body>
     <div class="container-fluid content">
@@ -49,32 +52,39 @@
         <!-- Incluir Cabeçalho -->
         {% include 'header.html' %}
         
-               
-        <!-- Botões -->
-        <div class="mb-4">            
-            <a href="{{ url_for('pagina_interesses', id=senador['CodigoParlamentar']) }}" class="btn btn-success">Atuação do Parlamentar</a>
-        </div>        
-               
-
-       <!-- Resultados da Pesquisa -->
-        <div id="resultados-pesquisa" class="mt-4">
-            <div id="resultados-container" class="accordion">
-                <!-- Cards de Resultados serão adicionados aqui -->
-            </div>
-        </div>
-
         
+        
+
+               
+               
+
+              
         <!-- Sugestões de Matérias Prioritárias em Cards (4 colunas) -->
         <h2 class="mb-3">Sugestões de matérias para o Senador {{ senador['NomeParlamentar'] }}</h2>
         <p class="text-secondary">Sugestões geradas automaticamente por algoritmos que analisam o histórico de 
             atuação do parlamentar e os dados das matérias em tramitação no Senado Federal.</p>
         <div class="row row-cols-1 row-cols-md-2 g-4">
-            {% for sugestao in sugestoes %}
+            {% for sugestao in sugestoes %}     
+                           
                 <div class="col">
                     <div class="card">
                         <div class="card-body">
                              <a href="{{ url_for('pagina_detalhes_materias', id=senador['CodigoParlamentar'], codigo_materia = sugestao['CodigoMateria']) }}" class="btn btn-primary">
-                                 <h5 class="card-title">{{ sugestao['Identificacao'] }}</h5></a>
+                                <h5 class="card-title">{{ sugestao['Identificacao'] }}</h5></a>
+                                <!-- Botões de Gostei e Não Gostei-->
+                                <button class="btn btn-success thumbs-up"                                
+
+                                data-codigo-parlamentar="{{ senador['CodigoParlamentar'] }}" 
+                                        data-codigo-materia="{{ sugestao['CodigoMateria'] }}" 
+                                        data-identificador-unico="{{ sugestao['identificador_unico'] }}">
+                                    <img src="{{ url_for('static', filename='hand-thumbs-up.svg') }}" class="thumbs">
+                                </button>
+                                <button class="btn btn-danger thumbs-down"
+                                        data-codigo-parlamentar="{{ senador['CodigoParlamentar'] }}" 
+                                        data-codigo-materia="{{ sugestao['CodigoMateria'] }}" 
+                                        data-identificador-unico="{{ sugestao['identificador_unico'] }}">
+                                    <img src="{{ url_for('static', filename='hand-thumbs-down.svg') }}" class="thumbs">
+                                </button>
                             <!-- Truncate a Ementa para, por exemplo, 100 caracteres -->
                             <p class="card-text">{{ sugestao['Ementa'][:200] }}{{ '...' if sugestao['Ementa']|length > 200 else '' }}</p>
                             {% if sugestao['justificativa_prioridade'] is not none %}

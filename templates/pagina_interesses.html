@@ -12,7 +12,12 @@
         <!-- Incluir Cabeçalho -->
         {% include 'header.html' %}
        
-
+        <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('pagina_detalhes', id=senador['CodigoParlamentar']) }}">Início</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Atuação</li>
+            </ol>
+        </nav>
 
         <!-- Meus Interesses -->
         <div class="my-4">

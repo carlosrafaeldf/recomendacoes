@@ -42,14 +42,45 @@
         .input-group-append button {
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
-    }
+        }
+        .thumbs-up,
+        .thumbs-down {
+            opacity: 0.5;
+        }
+
+        .thumbs-up.votado,
+        .thumbs-down.votado {
+            opacity: 1;
+        }
+
+        .menu {
+    display: flex;    
+    background-color: #526882; /* Cor de fundo do menu */
+    padding: 10px;
+}
+
+.menu a {
+    text-decoration: none; /* Remove sublinhado padrão de links */
+    color: #fff; /* Cor do texto do link */
+    padding: 8px 16px; /* Espaçamento interno do link */
+    border-radius: 5px; /* Borda arredondada */
+    transition: background-color 0.3s; /* Adiciona uma transição suave à cor de fundo */
+
+}
+
+.menu a:hover {
+    background-color: rgb(112, 110, 110); /* Cor de fundo ao passar o mouse */
+}
+
+    
 
         </style>
         <script src="{{ url_for('static', filename='script.js') }}"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        
     </head>
     <body>
-    <nav class="navbar mb-4">
+    <nav class="navbar">
         <div class="navbar-logo">
             <a href="{{ url_for('pagina_detalhes', id=senador['CodigoParlamentar']) }}">
             <img src="{{ url_for('static', filename='cover.png') }}" alt="Logo" class="img-fluid">
@@ -70,13 +101,29 @@
             </div>
         </form>
 
+        
+
         </div>
         <div class="navbar-user-info">
             <!-- Informações do Senador -->
-            <p class="text-white">{{ senador['NomeParlamentar'] }}</p>
+            <p class="h5 text-white"><strong>{{ senador['NomeParlamentar'] }}</strong></p>
             <p class="text-white">Partido: {{ senador['SiglaPartidoParlamentar'] }}</p>
             <p class="text-white">Estado: {{ senador['UfParlamentar'] }}</p>
+            <a class="nav-link" href="{{ url_for('pagina_avaliacao', id=senador['CodigoParlamentar']) }}"><button type="button" class="btn btn-success">O que achou do sistema?</button></a>
         </div>
+
+
+        
     </nav> 
+
+    
+
+      <div class="menu bg-dark mb-4">
+        <a href="{{ url_for('pagina_detalhes', id=senador['CodigoParlamentar']) }}">Página Inicial</a>
+        <a href="{{ url_for('pagina_interesses', id=senador['CodigoParlamentar']) }}">Atuação</a>
+        <a href="{{ url_for('pagina_preferencias', id=senador['CodigoParlamentar']) }}">Preferências</a>
+    </div>
+    
+    
     </body>
 </html>

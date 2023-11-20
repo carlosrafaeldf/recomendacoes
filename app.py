@@ -1,6 +1,6 @@
 import spacy
 nlp = spacy.load('pt_core_news_lg')
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request,redirect, url_for
 import pandas as pd
 import numpy as np
 import string
@@ -16,6 +16,8 @@ nltk.download('stopwords')
 from nltk.corpus import stopwords
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
+import csv
+from datetime import datetime  # Importe o módulo datetime
 
 # Ler os DataFrames uma vez e armazenar como variáveis globais
 df_senadores = pd.read_csv('df_senadores.csv')
@@ -38,6 +40,29 @@ cosine_sim_normal = cosine_similarity(count_matrix)
 
 # Realizar merge entre df_interesses e df_detalhes_materias
 df_interesses = pd.merge(df_interesses, df_detalhes_materias, on='CodigoMateria')
+
+#Lê os votos
+def get_votos(id):
+    meus_votos = list()
+    with open('votos.csv', 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        votos = list(reader)
+    
+    for i, row in enumerate(votos):
+        if row['codigo_parlamentar'] == str(id):
+            # Remova o voto se existir
+            meus_votos.append(row)
+            
+
+    lista = [voto['codigo_materia'] for voto in meus_votos]    
+    lista = list(map(int, lista))
+    df_retorno = df_detalhes_materias[df_detalhes_materias['CodigoMateria'].isin(lista)]
+    df_retorno = df_retorno.replace({np.nan: None})    
+    # Verificar se o resultado é uma Series (uma linha) e converter para DataFrame se necessário
+    if isinstance(df_retorno, pd.Series):
+        df_retorno = pd.DataFrame([df_retorno])
+
+    return df_retorno
 
 def obter_dataframe_senadores():
     return df_senadores
@@ -256,7 +281,12 @@ def obter_similares_pesquisa(codigo_parlamentar, query):
         df_retorno = df_retorno.head(12)[['Identificacao','Ementa','CodigoMateria','justificativa_prioridade']]    
         df_retorno = df_retorno.replace({np.nan: None})
     return df_retorno
-    
+
+# Função para salvar a avaliação em um arquivo CSV
+def salvar_avaliacao_csv(id,pergunta1, pergunta2, pergunta3):
+    with open('avaliacoes.csv', mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([id,pergunta1, pergunta2, pergunta3])    
 
 @app.route('/')
 def pagina_inicial():
@@ -272,6 +302,7 @@ def pagina_detalhes(id):
     df_retorno = df_retorno.head(12).to_dict(orient='records')
     ##sugestoes_para_senador = obter_dataframe_sugestoes()[(obter_dataframe_sugestoes()['CodigoParlamentar'] == id) & (obter_dataframe_sugestoes()['prioridade'] == 'Não')].head(12).to_dict(orient='records')
     #sugestoes_prioritarias = obter_dataframe_sugestoes()[(obter_dataframe_sugestoes()['CodigoParlamentar'] == id) & (obter_dataframe_sugestoes()['prioridade'] == 'Sim')].head(12).to_dict(orient='records')
+    
     return render_template('pagina_detalhes.html', senador=senador, sugestoes=df_retorno)
 
 @app.route('/senador/<int:id>/interesses')
@@ -301,6 +332,99 @@ def pesquisar_similares(id):
     df_retorno = df_retorno.to_dict(orient='records')    
     senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]
     return render_template('pagina_resultado_pesquisa.html', resultados_pesquisa=df_retorno, senador=senador)
+
+@app.route('/senador/<int:id>/avaliacao')
+def pagina_avaliacao(id):
+    senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]
+    return render_template('avaliacao.html',senador=senador, sucesso=request.args.get('sucesso'))
+
+@app.route('/senador/<int:id>/preferencias')
+def pagina_preferencias(id):
+    senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]
+    votos = get_votos(id).to_dict(orient='records')
+    return render_template('pagina_preferencias.html',senador=senador, preferencias=votos)
+
+
+@app.route('/senador/<int:id>/salvar_avaliacao', methods=['POST'])
+def salvar_avaliacao(id):
+    try:
+        senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]
+        # Obtenha os dados da avaliação do formulário
+        pergunta1 = int(request.form['pergunta1'])
+        pergunta2 = int(request.form['pergunta2'])        
+        pergunta3 = request.form['pergunta3']
+
+        # Salve a avaliação em um arquivo CSV
+        salvar_avaliacao_csv(id, pergunta1, pergunta2, pergunta3)
+
+        # Redirecione de volta para a página de avaliação com uma mensagem de sucesso
+        return redirect(url_for('pagina_avaliacao',id=id, sucesso='Obrigado! Avaliação enviada com sucesso!'))
+    except Exception as e:
+        # Em caso de erro, redirecione com uma mensagem de falha
+        return redirect(url_for('pagina_avaliacao', id=id, sucesso='Erro ao enviar a avaliação. Tente novamente.'))
+
+
+
+
+@app.route('/salvar_voto', methods=['POST'])
+def salvar_voto():
+    codigo_parlamentar = request.form.get('codigo_parlamentar')
+    codigo_materia = request.form.get('codigo_materia')
+    acao = request.form.get('acao')
+
+    # Adicione uma coluna de identificação única (pode ser um timestamp)
+    identificador_unico = datetime.now().strftime('%Y%m%d%H%M%S%f')
+
+    with open('votos.csv', 'r+') as csvfile:
+        reader = csv.DictReader(csvfile)
+        votos = list(reader)
+
+        # Verifique se já existe um voto com a mesma combinação
+        for i, row in enumerate(votos):
+            if row['codigo_parlamentar'] == codigo_parlamentar and row['codigo_materia'] == codigo_materia:
+                # Remova o voto se existir
+                votos.pop(i)
+                break
+        else:
+            # Adicione um novo voto se não existir
+            votos.append({'codigo_parlamentar': codigo_parlamentar, 'codigo_materia': codigo_materia, 'acao': acao, 'identificador_unico': identificador_unico})
+
+        # Volte ao início do arquivo e escreva os votos atualizados
+        csvfile.seek(0)
+        csvfile.truncate()
+        fieldnames = ['codigo_parlamentar', 'codigo_materia', 'acao', 'identificador_unico']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(votos)
+
+    return jsonify({'status': 'success'})
+
+def obter_voto_mat(codigo_parlamentar, codigo_materia):
+    try:
+        votos = obter_todos_os_votos()  # Substitua com sua lógica real para obter todos os votos
+        for voto in votos:
+            if voto['codigo_parlamentar'] == str(codigo_parlamentar) and voto['codigo_materia'] == str(codigo_materia):
+                return voto['acao']
+
+        return None  # Se não houver voto encontrado
+    except Exception as e:
+        print("ERRROU")
+        
     
+
+def obter_todos_os_votos():
+    try:
+        with open('votos.csv', 'r') as csvfile:
+            reader = csv.DictReader(csvfile)
+            return [voto for voto in reader]
+    except Exception as e:
+        print("ERRROU")
+
+@app.route('/get_voto_mat/<int:codigo_parlamentar>/<int:codigo_materia>')
+def get_voto_mat(codigo_parlamentar, codigo_materia):
+    voto = obter_voto_mat(codigo_parlamentar, codigo_materia)  # Substitua com sua lógica real
+    return jsonify({'acao': voto})
+
 if __name__ == '__main__':
+
     app.run(debug=True)

@@ -47,4 +47,10 @@ body {
     display: none;
 }
 
+.thumbs-up.votado,
+.thumbs-down.votado {
+    display: none;
+}
+
+
 /* Adicione outros estilos conforme necessário */
