@@ -1,6 +1,6 @@
 import spacy
 nlp = spacy.load('pt_core_news_lg')
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import pandas as pd
 import numpy as np
 import string
@@ -125,41 +125,26 @@ def obter_similares_sugeridas_coseno(codigo_materia, codigo_parlamentar):
     df_similares = df_similares.set_index('Indice')    
     DataFrameMaterias_filtrado = DataFrameMaterias.loc[df_similares.index]    
     DataFrameMaterias_filtrado['ValorSimilaridade'] = df_similares['ValorSimilaridade']
-    
-    # DataFrameMaterias_filtrado agora contém as linhas filtradas com a coluna de similaridade
+    DataFrameMaterias_filtrado['ValorSimilaridade'] = pd.to_numeric(DataFrameMaterias_filtrado['ValorSimilaridade'], errors='coerce') * 100
+    DataFrameMaterias_filtrado['ValorSimilaridade'] = DataFrameMaterias_filtrado['ValorSimilaridade'].round(2)
+        
 
+    # DataFrameMaterias_filtrado agora contém as linhas filtradas com a coluna de similaridade
     #Filtra para conter apenas os valores contidos em DataFrameMateriasAlvo
     condicao = DataFrameMaterias_filtrado['CodigoMateria'].isin(DataFrameMateriasAlvo['CodigoMateria'])
     DataFrameMaterias_filtrado = DataFrameMaterias_filtrado[condicao]
 
-    #Filtra para conter apenas as matérias que começam com P
-    DataFrameMaterias_filtrado = DataFrameMaterias_filtrado[DataFrameMaterias_filtrado['Identificacao'].str.startswith('P')]
+    #Filtra para conter apenas as matérias que começam com P e estão tramitando
+    condicao = ((DataFrameMaterias_filtrado['Identificacao'].str.startswith('P')) &
+                (DataFrameMaterias_filtrado['Tramitando'] == 'Sim') &
+                (DataFrameMaterias_filtrado['CodigoMateria'] != codigo_materia) &
+                (~DataFrameMaterias_filtrado['ClasseHierarquica'].str.contains('Orçamento Anual',na=False)) & 
+                (~DataFrameMaterias_filtrado['Natureza'].str.contains('Concessão',na=False)))
+    DataFrameMaterias_filtrado = DataFrameMaterias_filtrado[condicao]    
     DataFrameMaterias_filtrado = DataFrameMaterias_filtrado.replace({np.nan: None})
     
-    materias = pd.DataFrame()
-    achou = 0;    
-    for indice, row in DataFrameMaterias_filtrado.iterrows():
-        codigo_materia_pesquisada = row["CodigoMateria"]            
-        #esta_tramitando = is_materia_tramitando(codigo_materia_pesquisada)
-        esta_tramitando = row["Tramitando"]
-        #print('Está:'+esta_tramitando)
-        if (esta_tramitando == "Sim"):             
-            #materias = materias.append(row)            
-            #print(pd.DataFrame(row).T)
-            materias = pd.concat([materias,pd.DataFrame(row).T])
-            achou = achou + 1    
-
-        if achou >= 5:            
-            break  
+    return DataFrameMaterias_filtrado.head(6)
     
-    materias = materias[materias['CodigoMateria'] != CodigoMateria]
-    return materias
-    
-    # Verificar se o resultado é uma Series (uma linha) e converter para DataFrame se necessário
-    #if isinstance(df_retorno, pd.Series):
-    #    df_retorno = pd.DataFrame([df_retorno])
-
-    #return df_retorno
 
 def obter_similares_sugeridas(codigo_materia, codigo_parlamentar):
     # Lógica para obter matérias similares sugeridas
@@ -222,9 +207,16 @@ def obter_similares_pesquisa(codigo_parlamentar, query):
     query = query.translate(str.maketrans('', '', string.punctuation)).replace('\n',' ').lower()
     tokenized_query = query.split(" ")
     bm25_scores = bm25.get_scores(tokenized_query)
+
+    limite_similaridade = 0.5
+
+    # Filtra os documentos com escores BM25 acima do limite
+    documentos_selecionados = [i for i, score in enumerate(bm25_scores) if score > limite_similaridade]
+
+
     descending_indices = (-bm25_scores).argsort()
     print("Indices: ",descending_indices)
-    dataframe_filtrado = df_detalhes_materias.filter(items=descending_indices, axis=0)
+    dataframe_filtrado = df_detalhes_materias.filter(items=documentos_selecionados, axis=0)
     dataframe_filtrado = dataframe_filtrado[dataframe_filtrado['Identificacao'].str.startswith('P')]
     
     #Define a base que será usada para alvo    
@@ -248,7 +240,7 @@ def obter_similares_pesquisa(codigo_parlamentar, query):
 
         total_escapa += 1
 
-        if achou >= 5:
+        if achou >= 12:
             break
         if total_escapa > 500:
             print('escapei achando', achou)
@@ -258,10 +250,13 @@ def obter_similares_pesquisa(codigo_parlamentar, query):
     if isinstance(df_retorno, pd.Series):
         df_retorno = pd.DataFrame([df_retorno])
     
-    df_retorno = df_retorno.head(5)[['Identificacao','Ementa','CodigoMateria']]
-    df_retorno = df_retorno.replace(np.nan, '')
-    df_retorno = df_retorno.to_dict(orient='records')
-    return jsonify({'resultados': df_retorno})
+    if df_retorno.empty:
+        return df_retorno
+    else:
+        df_retorno = df_retorno.head(12)[['Identificacao','Ementa','CodigoMateria','justificativa_prioridade']]    
+        df_retorno = df_retorno.replace({np.nan: None})
+    return df_retorno
+    
 
 @app.route('/')
 def pagina_inicial():
@@ -283,7 +278,7 @@ def pagina_detalhes(id):
 def pagina_interesses(id):
     interesses_para_senador = obter_dataframe_interesses(id).to_dict(orient='records')
     senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]
-    return render_template('pagina_interesses.html',senador_selecionado=senador, interesses=interesses_para_senador,similares_sugeridas=obter_similares_sugeridas_coseno)
+    return render_template('pagina_interesses.html',senador=senador, interesses=interesses_para_senador,similares_sugeridas=obter_similares_sugeridas_coseno)
 
 @app.route('/senador/<int:id>/detalhes_materias/<int:codigo_materia>')
 def pagina_detalhes_materias(id, codigo_materia):
@@ -296,19 +291,16 @@ def pagina_detalhes_materias(id, codigo_materia):
     
     senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]
     detalhe_materia = obter_dataframe_detalhe_materia()[obter_dataframe_detalhe_materia()['CodigoMateria'] == codigo_materia].to_dict(orient='records')[0]
-    return render_template('pagina_detalhes_materias.html',senador_selecionado=senador, materia=detalhe_materia,similares_sugeridas=obter_similares_sugeridas,interesse=interesse_para_senador )
+    return render_template('pagina_detalhes_materias.html',senador=senador, materia=detalhe_materia,similares_sugeridas=obter_similares_sugeridas_coseno,interesse=interesse_para_senador )
 
-@app.route('/senador/<int:id>/pesquisar/<string:query>', methods=['GET'])
-def pesquisar_similares(id, query):
-    # Lógica para recuperar os dados do banco de dados ou de onde quer que estejam armazenados
-    # Substitua isso pela lógica real de pesquisa em seu aplicativo
-
-    # Aqui, estou apenas retornando um exemplo de JSON para fins de teste
-    #resultados = obter_similares_pesquisa(id,query)
-    resultados = obter_similares_pesquisa(id,query)
-
-    # Retorna a resposta como JSON
-    return resultados
-
+@app.route('/senador/<int:id>/pesquisar/', methods=['GET'])
+def pesquisar_similares(id):    
+    query = request.args.get('query', '')
+    df_retorno = obter_similares_pesquisa(id,query)    
+    df_retorno = df_retorno.replace({np.nan: None})
+    df_retorno = df_retorno.to_dict(orient='records')    
+    senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]
+    return render_template('pagina_resultado_pesquisa.html', resultados_pesquisa=df_retorno, senador=senador)
+    
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,82 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Detalhes do Senador</title>
+        {{ bootstrap.load_css() }}
+        <style>
+            /* Adicione estilos personalizados aqui, se necessário */
+            body {
+                background-color: #f8f9fa; /* Cor de fundo semelhante à da Amazon */
+            }
+            .navbar {
+                background-color: #232f3e; /* Cor de fundo da barra superior */
+                color: #ffffff; /* Cor do texto na barra superior */
+            }
+            .navbar-logo {
+                
+                max-width: 25%;
+            }
+            .navbar-search {
+            flex: 0.8; /* Reduza o tamanho da barra de pesquisa (ajuste conforme necessário) */
+            margin-right: 10px; /* Adicione uma margem direita para espaçamento */
+            }
+            .navbar-user-info {
+                max-width: 25%;
+                text-align: center; /* Alinha as informações do usuário à direita */
+                margin-right: 10px;
+            }
+
+            .content {
+            margin-top: 20px; /* Adiciona um espaço entre a barra superior e o conteúdo */
+        }
+        .footer {
+            
+            text-align: center;
+            padding: 5px;
+            background-color: #232f3e; /* Cor de fundo do rodapé */
+            color: #ffffff; /* Cor do texto no rodapé */
+            margin: 10px;
+        }
+
+        .input-group-append button {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
+        </style>
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    </head>
+    <body>
+    <nav class="navbar mb-4">
+        <div class="navbar-logo">
+            <a href="{{ url_for('pagina_detalhes', id=senador['CodigoParlamentar']) }}">
+            <img src="{{ url_for('static', filename='cover.png') }}" alt="Logo" class="img-fluid">
+            </a>
+        </div>
+        <div class="navbar-search">
+            <!-- Caixa de Pesquisa -->
+           <!-- Caixa de Pesquisa com Ícone de Lupa na Mesma Linha -->
+        <form class="form-inline mt-3 mb-3" action="{{ url_for('pesquisar_similares', id=senador['CodigoParlamentar'])}}" method="get">
+            <div class="input-group">
+                <input class="form-control w-75" type="search" placeholder="Pesquisar" aria-label="Pesquisar" id="search-input" name="query">
+                
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i> <!-- Ícone de Lupa -->
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        </div>
+        <div class="navbar-user-info">
+            <!-- Informações do Senador -->
+            <p class="text-white">{{ senador['NomeParlamentar'] }}</p>
+            <p class="text-white">Partido: {{ senador['SiglaPartidoParlamentar'] }}</p>
+            <p class="text-white">Estado: {{ senador['UfParlamentar'] }}</p>
+        </div>
+    </nav> 
+    </body>
+</html>

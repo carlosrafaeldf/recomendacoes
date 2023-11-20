@@ -1,36 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalhes do Senador</title>
-    {{ bootstrap.load_css() }}
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Detalhes do Senador</title>
+        {{ bootstrap.load_css() }}
+        <style>
+            /* Adicione estilos personalizados aqui, se necessário */
+            body {
+                background-color: #f8f9fa; /* Cor de fundo semelhante à da Amazon */
+            }
+            .navbar {
+                background-color: #232f3e; /* Cor de fundo da barra superior */
+                color: #ffffff; /* Cor do texto na barra superior */
+            }
+            .navbar-logo {
+                
+                max-width: 25%;
+            }
+            .navbar-search {
+            flex: 0.8; /* Reduza o tamanho da barra de pesquisa (ajuste conforme necessário) */
+            margin-right: 10px; /* Adicione uma margem direita para espaçamento */
+            }
+            .navbar-user-info {
+                max-width: 25%;
+                text-align: center; /* Alinha as informações do usuário à direita */
+                margin-right: 10px;
+            }
+
+            .content {
+            margin-top: 20px; /* Adiciona um espaço entre a barra superior e o conteúdo */
+        }
+        .footer {
+            
+            text-align: center;
+            padding: 5px;
+            background-color: #232f3e; /* Cor de fundo do rodapé */
+            color: #ffffff; /* Cor do texto no rodapé */
+            margin: 10px;
+        }
+
+        </style>
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+    </head>
 <body>
-    <div class="container">
-        <!-- Informações Iniciais -->
-        <div class="mb-4">
-            <h1>{{ senador['NomeParlamentar'] }}</h1>
-            <p>Partido: {{ senador['SiglaPartidoParlamentar'] }}</p>
-            <p>Estado: {{ senador['UfParlamentar'] }}</p>
-        </div>
+    <div class="container-fluid content">
 
-
+        <!-- Incluir Cabeçalho -->
+        {% include 'header.html' %}
         
-       
+               
         <!-- Botões -->
-        <div class="mb-4">
-            <a href="{{ url_for('pagina_inicial') }}" class="btn btn-primary">Voltar à Página Inicial</a>
-            <a href="{{ url_for('pagina_interesses', id=senador['CodigoParlamentar']) }}" class="btn btn-success">Meus Interesses</a>
-        </div>
-        
-                <!-- Caixa de Pesquisa -->
-    <form class="form-inline mt-3 mb-3">
-        <input class="form-control mr-sm-2" type="search" placeholder="Pesquisar" aria-label="Pesquisar" id="search-input">
-        <button onclick="pesquisar({{ senador['CodigoParlamentar'] }})">Pesquisar</button>
-
-    </form>
+        <div class="mb-4">            
+            <a href="{{ url_for('pagina_interesses', id=senador['CodigoParlamentar']) }}" class="btn btn-success">Atuação do Parlamentar</a>
+        </div>        
+               
 
        <!-- Resultados da Pesquisa -->
         <div id="resultados-pesquisa" class="mt-4">
@@ -41,7 +65,9 @@
 
         
         <!-- Sugestões de Matérias Prioritárias em Cards (4 colunas) -->
-        <h2 class="mb-3">Sugestões de Matérias para o Senador {{ senador['NomeParlamentar'] }}</h2>
+        <h2 class="mb-3">Sugestões de matérias para o Senador {{ senador['NomeParlamentar'] }}</h2>
+        <p class="text-secondary">Sugestões geradas automaticamente por algoritmos que analisam o histórico de 
+            atuação do parlamentar e os dados das matérias em tramitação no Senado Federal.</p>
         <div class="row row-cols-1 row-cols-md-2 g-4">
             {% for sugestao in sugestoes %}
                 <div class="col">
@@ -62,6 +88,10 @@
 
         
     </div>
+
+     <!-- Incluir Rodapé -->
+     {% include 'footer.html' %}
+
     {{ bootstrap.load_js() }}
 </body>
 </html>

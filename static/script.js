@@ -21,7 +21,7 @@ function pesquisar(senadorCodigo) {
             console.log("Response:"+response)
             return response.json();
         })
-        .then(data => exibirResultados(data))
+        .then(data => exibirResultados(data, senadorCodigo))
         .catch(error => console.error('Erro na solicitação AJAX:', error));
     
     event.preventDefault(); 
@@ -29,16 +29,16 @@ function pesquisar(senadorCodigo) {
 
 
 
-function exibirResultados(resultados) {
-    console.log("Resultados recebidos:", resultados);
+function exibirResultados(resultados, senadorCodigo) {
+    
 
-    var resultadosPesquisa = document.getElementById('resultados-pesquisa');
-    resultadosPesquisa.innerHTML = '';  // Limpa os resultados anteriores
+    var resultadosContainer = document.getElementById('resultados-container');
+    resultadosContainer.innerHTML = ''; // Limpa qualquer conteúdo existente
 
     if (resultados.length === 0) {
-        resultadosPesquisa.innerHTML = '<p>Nenhum resultado encontrado.</p>';
+        resultadosContainer.innerHTML = '<p>Nenhum resultado encontrado.</p>';
     } else {
-        resultadosPesquisa.innerHTML = '<h3>Resultados da Pesquisa:</h3>';
+        resultadosContainer.innerHTML = '<h3>Resultados da Pesquisa:</h3>';
 
         
 
@@ -68,8 +68,14 @@ function exibirResultados(resultados) {
                 cardBody.appendChild(ementa);
             }
 
-            card.appendChild(cardBody);
-            resultadosPesquisa.appendChild(card);
+            card.appendChild(cardBody);            
+            resultadosContainer.appendChild(card);
+
+            
+            
         });
+        // Redirecionar para a página de resultados (substitua 'resultados_pesquisa' com o caminho real)
+        window.location.href = '/senador/'+senadorCodigo+'/resultados_pesquisa/';
+        
     }
 }
