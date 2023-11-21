@@ -1,6 +1,6 @@
 import spacy
 nlp = spacy.load('pt_core_news_lg')
-from flask import Flask, render_template, request,redirect, url_for
+from flask import Flask, render_template, request,redirect, url_for, send_file
 import pandas as pd
 import numpy as np
 import string
@@ -510,6 +510,16 @@ def obter_interesses_senadores_estado(id):
     
     df_retorno = df_retorno.replace({np.nan: None}) 
     return df_retorno
+
+@app.route('/download_votos')
+def download_votos():
+    votos_file_path = 'votos.csv'
+    return send_file(votos_file_path, as_attachment=True)
+
+@app.route('/download_avaliacao')
+def download_avaliacoes():
+    votos_file_path = 'avaliacoes.csv'
+    return send_file(votos_file_path, as_attachment=True)
 
 if __name__ == '__main__':
 
