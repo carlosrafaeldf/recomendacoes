@@ -295,10 +295,10 @@ def obter_similares_pesquisa(codigo_parlamentar, query):
     return df_retorno
 
 # Função para salvar a avaliação em um arquivo CSV
-def salvar_avaliacao_csv(id,pergunta1, pergunta2, pergunta3):
+def salvar_avaliacao_csv(id,pergunta1, pergunta2, pergunta3, pergunta4):
     with open('avaliacoes.csv', mode='a', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow([id,pergunta1, pergunta2, pergunta3])    
+        writer.writerow([id,pergunta1, pergunta2, pergunta3, pergunta4])    
 
 @app.route('/')
 def pagina_inicial():
@@ -370,11 +370,12 @@ def salvar_avaliacao(id):
         senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]
         # Obtenha os dados da avaliação do formulário
         pergunta1 = int(request.form['pergunta1'])
-        pergunta2 = int(request.form['pergunta2'])        
-        pergunta3 = request.form['pergunta3']
+        pergunta2 = int(request.form['pergunta2'])
+        pergunta3 = int(request.form['pergunta3'])        
+        pergunta4 = request.form['pergunta4']
 
         # Salve a avaliação em um arquivo CSV
-        salvar_avaliacao_csv(id, pergunta1, pergunta2, pergunta3)
+        salvar_avaliacao_csv(id, pergunta1, pergunta2, pergunta3, pergunta4)
 
         # Redirecione de volta para a página de avaliação com uma mensagem de sucesso
         return redirect(url_for('pagina_avaliacao',id=id, sucesso='Obrigado! Avaliação enviada com sucesso!'))
