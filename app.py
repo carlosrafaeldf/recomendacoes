@@ -40,6 +40,7 @@ cosine_sim_normal = cosine_similarity(count_matrix)
 
 # Realizar merge entre df_interesses e df_detalhes_materias
 df_interesses = pd.merge(df_interesses, df_detalhes_materias, on='CodigoMateria')
+df_interesses = pd.merge(df_interesses, df_senadores, on='CodigoParlamentar')
 
 #Lê os votos
 def get_votos(id):
@@ -76,6 +77,17 @@ def obter_dataframe_detalhe_materia():
 def obter_dataframe_interesses(id):
     # Filtrar os 10 principais interesses para o parlamentar específico
     interesses_para_senador = df_interesses[df_interesses['CodigoParlamentar'] == id].sort_values(by='interesse', ascending=False).head(10)
+    return interesses_para_senador
+
+def obter_dataframe_interesses_condicionado(id):
+    # Filtrar os 10 principais interesses para o parlamentar específico
+        
+    condicao = ((df_interesses['Identificacao'].str.startswith('P')) &
+                (df_interesses['Tramitando'] == 'Sim') &                
+                (~df_interesses['ClasseHierarquica'].str.contains('Orçamento Anual',na=False)) & 
+                (~df_interesses['Natureza'].str.contains('Concessão',na=False)))
+    df_interesses_condicionado = df_interesses[condicao]
+    interesses_para_senador = df_interesses_condicionado[df_interesses_condicionado['CodigoParlamentar'] == id].sort_values(by='interesse', ascending=False).head(10)
     return interesses_para_senador
 
 def obter_similares_sugeridas_prioritarias(codigo_materia, codigo_parlamentar):
@@ -344,6 +356,13 @@ def pagina_preferencias(id):
     votos = get_votos(id).to_dict(orient='records')
     return render_template('pagina_preferencias.html',senador=senador, preferencias=votos)
 
+@app.route('/senador/<int:id>/outros')
+def pagina_outros(id):
+    senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id].to_dict(orient='records')[0]
+    interesses_partido = obter_interesses_senadores_partido(id).to_dict(orient='records')
+    interesses_estado = obter_interesses_senadores_estado(id).to_dict(orient='records')
+    principais_interesses = obter_principais_interesses_senadores().to_dict(orient='records')
+    return render_template('pagina_outros.html',senador=senador, interesses_partido=interesses_partido, interesses_estado = interesses_estado, principais_interesses = principais_interesses)
 
 @app.route('/senador/<int:id>/salvar_avaliacao', methods=['POST'])
 def salvar_avaliacao(id):
@@ -424,6 +443,72 @@ def obter_todos_os_votos():
 def get_voto_mat(codigo_parlamentar, codigo_materia):
     voto = obter_voto_mat(codigo_parlamentar, codigo_materia)  # Substitua com sua lógica real
     return jsonify({'acao': voto})
+
+def obter_senadores_partido(id):
+    senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id]
+    partido = senador['SiglaPartidoParlamentar'].values[0]
+    df_senadores_partido = obter_dataframe_senadores()[obter_dataframe_senadores()['SiglaPartidoParlamentar'] == partido]
+    # Remova o senador específico do DataFrame df_senadores_partido
+    df_senadores_partido = df_senadores_partido[df_senadores_partido['CodigoParlamentar'] != id]
+
+    return df_senadores_partido
+
+def obter_senadores_estado(id):
+    senador = obter_dataframe_senadores()[obter_dataframe_senadores()['CodigoParlamentar'] == id]
+    estado = senador['UfParlamentar'].values[0]
+    df_senadores_estado = obter_dataframe_senadores()[obter_dataframe_senadores()['UfParlamentar'] == estado]
+    # Remova o senador específico do DataFrame df_senadores_partido
+    df_senadores_estado = df_senadores_estado[df_senadores_estado['CodigoParlamentar'] != id]
+
+    return df_senadores_estado
+
+def obter_interesses_senadores_partido(id):
+    df_senadores_partido = obter_senadores_partido(id)
+    df_retorno = pd.DataFrame()
+    for index, row in df_senadores_partido.iterrows():
+        codigo_parlamentar = row['CodigoParlamentar']
+        df_interesses_senador = obter_dataframe_interesses_condicionado(codigo_parlamentar)
+        df_interesses_senador = df_interesses_senador.head(3)
+        df_retorno = pd.concat([df_retorno, df_interesses_senador])
+    
+    df_retorno = df_retorno.replace({np.nan: None}) 
+    return df_retorno
+
+def obter_principais_interesses_senadores():
+    df_filtrado = df_interesses[df_interesses['interesse'] > 5]
+    condicao = ((df_interesses['Identificacao'].str.startswith('P')) &
+                (df_interesses['Tramitando'] == 'Sim') &                
+                (~df_interesses['ClasseHierarquica'].str.contains('Orçamento Anual',na=False)) & 
+                (~df_interesses['Natureza'].str.contains('Concessão',na=False)))
+    df_filtrado = df_interesses[condicao]
+    df_agrupado = df_filtrado.groupby('CodigoMateria')['CodigoParlamentar'].nunique().reset_index(name='ContagemParlamentares')
+    df_ordenado = df_agrupado.sort_values(by='ContagemParlamentares', ascending=False)
+    df_ordenado = df_ordenado.head(8)
+    df_retorno = pd.DataFrame()
+    for index,row in df_ordenado.iterrows():
+        codigo_materia = row['CodigoMateria']
+        detalhe_materia = obter_dataframe_detalhe_materia()[obter_dataframe_detalhe_materia()['CodigoMateria'] == codigo_materia]
+        detalhe_materia['ContagemParlamentares'] = row['ContagemParlamentares']
+        df_retorno = pd.concat([df_retorno,detalhe_materia])
+
+
+    df_retorno = df_retorno.replace({np.nan: None}) 
+    return df_retorno
+
+
+def obter_interesses_senadores_estado(id):
+    df_senadores_estado = obter_senadores_estado(id)
+    df_retorno = pd.DataFrame()
+    for index, row in df_senadores_estado.iterrows():
+        codigo_parlamentar = row['CodigoParlamentar']
+        df_interesses_senador = obter_dataframe_interesses_condicionado(codigo_parlamentar)
+        df_interesses_senador = df_interesses_senador.head(3)
+        df_retorno = pd.concat([df_retorno, df_interesses_senador])
+    
+    
+    
+    df_retorno = df_retorno.replace({np.nan: None}) 
+    return df_retorno
 
 if __name__ == '__main__':
 

@@ -159,7 +159,8 @@
 
       <div class="menu bg-dark mb-4">
         <a href="{{ url_for('pagina_detalhes', id=senador['CodigoParlamentar']) }}">Página Inicial</a>
-        <a href="{{ url_for('pagina_interesses', id=senador['CodigoParlamentar']) }}">Atuação</a>
+        <a href="{{ url_for('pagina_interesses', id=senador['CodigoParlamentar']) }}">Atuação</a>        
+        <a href="{{ url_for('pagina_outros', id=senador['CodigoParlamentar']) }}">Outros interesses</a>
         <a href="{{ url_for('pagina_preferencias', id=senador['CodigoParlamentar']) }}">Preferências</a>
     </div>
     
