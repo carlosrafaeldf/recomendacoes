@@ -18,10 +18,15 @@
                 <li class="breadcrumb-item active" aria-current="page">Outros interesses</li>
             </ol>
         </nav>
+        <center>
+        <a href="#partido" class="btn btn-primary"> Por partido </a>
+        <a href="#estado" class="btn btn-primary"> Por estado </a>
+        <a href="#populares" class="btn btn-primary"> Populares </a>
+        </center>   
 
         <!-- Meus Interesses -->
         <div class="my-4">
-            <h2 class="mb-3">Atuação de outros parlamentares do seu <strong>PARTIDO</strong></h2>
+            <h2 class="mb-3" id="partido">Atuação de outros parlamentares do seu <strong>PARTIDO</strong></h2>
             <p class="text.text-white"><small>Aqui serão listadas as matérias em que houve mais atuação de outros parlamentares do partido e que estão ainda em tramitação.</small></p>
             
             <div class="row row-cols-1 row-cols-md-2 g-4">
@@ -66,7 +71,7 @@
 
             <!-- MATÉRIAS DE OUTROS SENADORES DO ESTADO-->
 
-            <h2 class="mb-3">Atuação de outros parlamentares do seu <strong>ESTADO</strong></h2>
+            <h2 class="mb-3" id="estado">Atuação de outros parlamentares do seu <strong>ESTADO</strong></h2>
             <p class="text.text-white"><small>Aqui serão listadas as matérias em que houve mais atuação de outros parlamentares do estado e que estão ainda em tramitação.</small></p>
             <div class="row row-cols-1 row-cols-md-2 g-4">
                 {% if interesses_estado %}
@@ -110,7 +115,7 @@
 
             <!-- MATÉRIAS POPULARES-->
 
-            <h2 class="mb-3">Matérias populares</h2>
+            <h2 class="mb-3" id="populares">Matérias populares</h2>
             <p class="text.text-white"><small>Aqui serão listadas as matérias em que houve mais atuação de outros parlamentares do estado e que estão ainda em tramitação.</small></p>
             <div class="row row-cols-1 row-cols-md-2 g-4">
                 {% if principais_interesses %}
